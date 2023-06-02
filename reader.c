@@ -2,6 +2,8 @@
  * linked with -lpthread -lwiringPi -lrt
  */
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <wiringPi.h>
@@ -13,7 +15,7 @@
 #define PIN_1 1 // GPIO Pin 18 | White cable | Data1
 #define PIN_SOUND 25 // GPIO Pin 26 | Yellow cable | Sound
 
-#define MAXWIEGANDBITS 32
+#define MAXWIEGANDBITS 100
 #define READERTIMEOUT 3000000
 #define LEN 256
 
