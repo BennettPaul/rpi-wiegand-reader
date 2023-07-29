@@ -24,6 +24,8 @@ static unsigned long long __wiegandData;
 static unsigned long __wiegandBitCount;
 static struct timespec __wiegandBitTime;
 
+#define Max_Digits 10
+
 void getData0(void) {
     __wiegandData <<= 1;
     __wiegandBitCount++;
@@ -107,24 +109,12 @@ char* long_to_binary(unsigned long long k, int size)
     return c;
 }
 
+
 void main(void) {
     CURL *handle = curl_easy_init();
 
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
-
-    char *data = "{\"time\": \"1111\", \"data\": \"1234\"}";
-    /* post binary data */
-    curl_easy_setopt(handle, CURLOPT_POSTFIELDS, data);
-    /* set the size of the postfields data */
-    curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, 33);
-    /* pass our list of custom made headers */
-    curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(handle, CURLOPT_URL, "http://localhost:8080/test");
-
-    curl_easy_perform(handle); /* post away! */
-
-    curl_slist_free_all(headers); /* free the header list */
 
     int i;
 
@@ -140,6 +130,10 @@ void main(void) {
             int bytes = bitLen / 8 + 1;
             FILE *fp;
             fp = fopen("output", "a");
+
+
+            char timeStr[Max_Digits + sizeof(char)];
+            sprintf(timeStr, "%lu", (unsigned long)time(NULL));
             printf("%lu ", (unsigned long)time(NULL));
             fprintf(fp, "%lu ", (unsigned long)time(NULL));
             printf("Read %d bits (%d bytes): ", bitLen, bytes);
@@ -168,11 +162,32 @@ void main(void) {
             }
             printf("%d", code);
 
+            char codeStr[Max_Digits + sizeof(char)];
+            sprintf(codeStr, "%li", code);
+
+            char data[256];
+            strcpy("{\"room\": \"CRTVC300\", \"timestamp\": ");
+            strcat(data, timeStr);
+            strcat(data, ", \"sid\": \"");
+            strcat(data, codeStr);
+            strcat(data, "\"}");
+            /* post binary data */
+            curl_easy_setopt(handle, CURLOPT_POSTFIELDS, data);
+            /* set the size of the postfields data */
+            curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, 256);
+            /* pass our list of custom made headers */
+            curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+            curl_easy_setopt(handle, CURLOPT_URL, "https://api.ams-lti.com/attendance");
+
+            curl_easy_perform(handle); /* post away! */
+
             fp = fopen("output", "a");
             printf("\n");
             fprintf(fp, "\n");
             fclose(fp);
+
             // makeBeep(200, 1);
         }
     }
+    curl_slist_free_all(headers); /* free the header list */
 }
