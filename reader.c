@@ -166,7 +166,7 @@ void main(void) {
             sprintf(codeStr, "%li", code);
 
             char data[256];
-            strcpy("{\"room\": \"CRTVC300\", \"timestamp\": ");
+            strcpy(data, "{\"room\": \"CRTVC300\", \"timestamp\": ");
             strcat(data, timeStr);
             strcat(data, ", \"sid\": \"");
             strcat(data, codeStr);
