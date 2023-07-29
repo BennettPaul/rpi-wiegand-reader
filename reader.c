@@ -165,14 +165,14 @@ void main(void) {
             char codeStr[Max_Digits + sizeof(char)];
             sprintf(codeStr, "%li", code);
 
-            char data[256];
-            strcpy(data, "{\"room\": \"CRTVC300\", \"timestamp\": ");
-            strcat(data, timeStr);
-            strcat(data, ", \"sid\": \"");
-            strcat(data, codeStr);
-            strcat(data, "\"}");
+            char jsonData[256];
+            strcpy(jsonData, "{\"room\": \"CRTVC300\", \"timestamp\": ");
+            strcat(jsonData, timeStr);
+            strcat(jsonData, ", \"sid\": \"");
+            strcat(jsonData, codeStr);
+            strcat(jsonData, "\"}");
             /* post binary data */
-            curl_easy_setopt(handle, CURLOPT_POSTFIELDS, data);
+            curl_easy_setopt(handle, CURLOPT_POSTFIELDS, jsonData);
             /* set the size of the postfields data */
             curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, 256);
             /* pass our list of custom made headers */
