@@ -83,7 +83,6 @@ int wiegandReadData(unsigned long long* data, int dataMaxLen) {
 }
 
 // void makeBeep(int millisecs, int times) {
-//     int i;
 //     for (i = 0; i < times; i++) {
 //         digitalWrite(PIN_SOUND, LOW);
 //         delay(millisecs);
