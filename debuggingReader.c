@@ -86,18 +86,18 @@ int wiegandReadData(unsigned long long* data, int dataMaxLen) {
     return 0;
 }
 
-// Converts the data long to a binary string
-char* long_to_binary(unsigned long long k, int size)
-{
-    static char c[65];
-    c[0] = '\0';
+// Converts an unsigned long long to a binary string literal
+char* ULL_to_binary(unsigned long long k) {
+    static char c[65];                                                                      // set the size of the output to 65
+    c[0] = '\0';                                                                            // load a null terminator into the string.
 
     unsigned long long val;
     int i;
-    for (i = 0, val = 1ULL << (sizeof(unsigned long long)*8-1); val > 0; val >>= 1, i++) {
+
+    for (i = 0, val = 1ULL << (sizeof(unsigned long long)*8-1); val > 0; val >>= 1, i++) { // checks that val is less than 0 :
         if (i > 28) {
             strcat(c, ((k & val) == val) ? "1" : "0");
-        }
+                  }
     }
     return c;
 }
@@ -138,7 +138,7 @@ void main(void) {
             fprintf(fp, " : ");
             fclose(fp);
 
-            char* dataStr = long_to_binary(data, 35);
+            char* dataStr = ULL_to_binary(data);
             printf("%s\n", dataStr);
             fprintf(fp, "%s\n", dataStr);
             for (int i = 14; i <= 33; i++) {
