@@ -26,7 +26,7 @@ static struct timespec __wiegandBitTime;
 
 #define Max_Digits 10
 
-// used to pull data the Data0 (Cyan wire)
+// used to pull data the Data1 (White)
 void getData0(void) {
     __wiegandData <<= 1;                                // Shift the data by 1 to the left data is little endian
     __wiegandBitCount++;                                // counts the clock cycles
@@ -74,7 +74,8 @@ int wiegandGetPendingBitCount() {
 
 // reads the data and returns it as an it
 int wiegandReadData(unsigned long long* data, int dataMaxLen) {
-    if (wiegandGetPendingBitCount() > 0) {              // checks to see if there are any pending Bits
+    if (wiegandGetPendingBitCount() == 35) {              // checks to see if there are any pending Bits
+        // TODO: check if facility code is correct
         int bitCount = __wiegandBitCount;
         int byteCount = (__wiegandBitCount / 8) + 1;
         if (byteCount < dataMaxLen) {                   // checks to see if the byteCount is less than the max length of the data
@@ -93,17 +94,17 @@ char* ULL_to_binary(unsigned long long k) {
 
     unsigned long long val;
     int i;
-
+    
     for (i = 0, val = 1ULL << (sizeof(unsigned long long)*8-1); val > 0; val >>= 1, i++) { // checks that val is less than 0 :
-        if (i > 28) {
+        if (i > 28) { // trim binary down to last 35-bits
             strcat(c, ((k & val) == val) ? "1" : "0");
-                  }
+        }
     }
     return c;
 }
 
 
-void main(void) {
+int main(int argc, char const *argv[]) {
     CURL *handle = curl_easy_init();
 
     struct curl_slist *headers = NULL;
@@ -129,42 +130,42 @@ void main(void) {
             sprintf(timeStr, "%lu", (unsigned long)time(NULL));
             printf("%lu ", (unsigned long)time(NULL));
             fprintf(fp, "%lu ", (unsigned long)time(NULL));
-            printf("Read %d bits (%d bytes): ", bitLen, bytes);
-            fprintf(fp, "Read %d bits (%d bytes): ", bitLen, bytes);
-            // for (i = 0; i < bytes; i++) printf("%02X", (int)data[i]);
-            // for (i = 0; i < bytes; i++) fprintf(fp, "%02X", (int)data[i]);
 
-            printf(" : ");
-            fprintf(fp, " : ");
-            fclose(fp);
+            printf("Read %d bits (%d bytes): %s", bitLen, bytes, ULL_to_binary(data));
+            fprintf(fp, "Read %d bits (%d bytes): %s ", bitLen, bytes, ULL_to_binary(data));
 
-            char* dataStr = ULL_to_binary(data);
-            printf("%s\n", dataStr);
-            fprintf(fp, "%s\n", dataStr);
-            for (int i = 14; i <= 33; i++) {
-                printf("%c", dataStr[i]);
-            }
-            printf("\n");
-            long code = 0;
-            long pval = 1;
-            for (int i = 33; i >= 14; i--) {
-                if (dataStr[i] == '1') {
-                    code += 1 * pval;
+            // char* dataStr = ULL_to_binary(data);
+            // printf("%s\n", dataStr);
+            // fprintf(fp, "%s\n", dataStr);
+            // for (int i = 14; i <= 33; i++) {
+                // printf("%c", dataStr[i]);
+            // }
+            // printf("\n");
+            
+            unsigned long long val;
+            int code = 0;
+    
+            for (val = 1ULL << 20; val > 1; val >>= 1) {
+                if (data & val == val) {
+                    code += 1 * (val >> 1);
                 }
-                pval *= 2;
             }
-            printf("%li", code);
 
+            printf("%d", code);
+            fprintf("%d", code);
+            fclose(fp);
             char codeStr[Max_Digits + sizeof(char)];
-            sprintf(codeStr, "%li", code);
+            sprintf(codeStr, "%d", code);
 
             char jsonData[256];
-            strcpy(jsonData, "{\"room\": \"CRTVC300\", \"timestamp\": ");
+            strcpy(jsonData, "{\"room\": \"");
+            strcat(jsonData, argv[1]);
+            strcat(jsonData, "\", \"timestamp\": ");
             strcat(jsonData, timeStr);
             strcat(jsonData, ", \"sid\": \"");
             strcat(jsonData, codeStr);
             strcat(jsonData, "\"}");
-            /* post binary data */
+            /* post AttendanceRecord data */
             curl_easy_setopt(handle, CURLOPT_POSTFIELDS, jsonData);
             /* set the size of the postfields data */
             curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, 256);
