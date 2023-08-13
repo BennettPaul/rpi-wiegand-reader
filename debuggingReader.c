@@ -151,15 +151,15 @@ int main(int argc, char const *argv[]) {
                 }
             }
 
-            printf("%d", code);
-            fprintf(fp, "%d", code);
+            printf(" (%d)", code);
+            fprintf(fp, " (%d)", code);
             fclose(fp);
             char codeStr[Max_Digits + sizeof(char)];
             sprintf(codeStr, "%d", code);
 
             char jsonData[256];
             strcpy(jsonData, "{\"room\": \"");
-            strcat(jsonData, argv[1]);
+            strcat(jsonData, "COOR170");
             strcat(jsonData, "\", \"timestamp\": ");
             strcat(jsonData, timeStr);
             strcat(jsonData, ", \"sid\": \"");
