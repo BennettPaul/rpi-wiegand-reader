@@ -146,13 +146,13 @@ int main(int argc, char const *argv[]) {
             int code = 0;
     
             for (val = 1ULL << 20; val > 1; val >>= 1) {
-                if (data & val == val) {
+                if ((data & val) == val) {
                     code += 1 * (val >> 1);
                 }
             }
 
             printf("%d", code);
-            fprintf("%d", code);
+            fprintf(fp, "%d", code);
             fclose(fp);
             char codeStr[Max_Digits + sizeof(char)];
             sprintf(codeStr, "%d", code);
