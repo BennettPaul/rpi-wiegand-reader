@@ -151,8 +151,8 @@ int main(int argc, char const *argv[]) {
                 }
             }
 
-            printf("%d", code);
-            fprintf("%d", code);
+            printf("(%d)", code);
+            fprintf("(%d)", code);
             fclose(fp);
             char codeStr[Max_Digits + sizeof(char)];
             sprintf(codeStr, "%d", code);
