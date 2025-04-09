@@ -4,15 +4,15 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <poll.h>
 
-#define D0_LINE 17
-#define D1_LINE 18
 #define CHIP_NAME "gpiochip0"
+#define D0_LINE 17  // GPIO 17 (pin 11)
+#define D1_LINE 18  // GPIO 18 (pin 12)
+#define READERTIMEOUT 3000000  // 3 ms
 
-#define READERTIMEOUT 3000000
-
-static unsigned long long wiegandData;
-static unsigned long wiegandBitCount;
+static unsigned long long wiegandData = 0;
+static unsigned long wiegandBitCount = 0;
 static struct timespec wiegandBitTime;
 
 void handleBit(int bitValue) {
@@ -29,7 +29,12 @@ int wiegandGetPendingBitCount() {
     delta.tv_sec = now.tv_sec - wiegandBitTime.tv_sec;
     delta.tv_nsec = now.tv_nsec - wiegandBitTime.tv_nsec;
 
-    if ((delta.tv_sec > 1) || (delta.tv_nsec > READERTIMEOUT))
+    if (delta.tv_nsec < 0) {
+        delta.tv_sec -= 1;
+        delta.tv_nsec += 1000000000;
+    }
+
+    if ((delta.tv_sec > 0) || (delta.tv_nsec > READERTIMEOUT))
         return wiegandBitCount;
 
     return 0;
@@ -78,42 +83,55 @@ int main() {
         return 1;
     }
 
-    wiegandReset();
+    int fd_d0 = gpiod_line_event_get_fd(line_d0);
+    int fd_d1 = gpiod_line_event_get_fd(line_d1);
 
+    struct pollfd fds[2];
+    fds[0].fd = fd_d0;
+    fds[0].events = POLLIN;
+    fds[1].fd = fd_d1;
+    fds[1].events = POLLIN;
+
+    wiegandReset();
     printf("Listening for Wiegand input...\n");
 
     while (1) {
-        struct timespec timeout = {1, 0}; // 1 second timeout
-        int ret_d0 = gpiod_line_event_wait(line_d0, &timeout);
-        int ret_d1 = gpiod_line_event_wait(line_d1, &timeout);
+        int ret = poll(fds, 2, 1000);  // 1 second timeout
 
-        if (ret_d0 == 1 && gpiod_line_event_read(line_d0, &event) == 0)
-            handleBit(0);
-        if (ret_d1 == 1 && gpiod_line_event_read(line_d1, &event) == 0)
-            handleBit(1);
+        if (ret > 0) {
+            if (fds[0].revents & POLLIN) {
+                if (gpiod_line_event_read(line_d0, &event) == 0) {
+                    handleBit(0); // Falling edge on D0 = 0
+                }
+            }
+            if (fds[1].revents & POLLIN) {
+                if (gpiod_line_event_read(line_d1, &event) == 0) {
+                    handleBit(1); // Falling edge on D1 = 1
+                }
+            }
+        }
 
         int bitLen = wiegandGetPendingBitCount();
         if (bitLen > 0) {
             unsigned long long data = wiegandData;
+
+            // Print raw binary
             printf("Wiegand: %s (%d bits)\n", ULL_to_binary(data), bitLen);
 
-            // Extract code using your logic or simplified:
-            unsigned long long val;
-            int code = 0;
-            for (val = 1ULL << 20; val > 1; val >>= 1) {
-                if ((data & val) == val) {
-                    code += 1 * (val >> 1);
-                }
-            }
+            // Basic decoding: try extracting middle 24 bits as ID
+            int code = (data >> 1) & 0xFFFFFF;
             printf("Decoded: %d\n", code);
+
             wiegandReset();
         }
 
-        usleep(1000); // Reduce CPU usage
+        usleep(1000);  // Slight delay to reduce CPU usage
     }
 
+    // Cleanup (not reached)
     gpiod_line_release(line_d0);
     gpiod_line_release(line_d1);
     gpiod_chip_close(chip);
+
     return 0;
 }
